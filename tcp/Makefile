@@ -6,4 +6,4 @@ all:client.o server.o
 	@echo "done!"
 
 clean:
-	rm *.o
+	rm -rf *.o
