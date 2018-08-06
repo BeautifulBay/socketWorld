@@ -38,13 +38,13 @@ struct server_data {
 	int npolledevents;
 	sem_t queue_sem;
 	pthread_mutex_t queue_mutex;
+	struct queue_head *queue;
 };
 
 int tcp_server_init(struct server_data *test)
 {
 	int ret;
 	struct queue_head *queue;
-
 	/* create socket fd */
 	test->server_sd = socket(AF_INET, SOCK_STREAM, 0);
 	if (test->server_sd == -1) {
@@ -90,12 +90,11 @@ int tcp_server_init(struct server_data *test)
 	}
 
 	/* add listen sd to epoll */
-	queue = (struct queue_head *)malloc(sizeof(struct queue_head));
-	queue->client_sd = test->server_sd;
+	test->queue = (struct queue_head *)malloc(sizeof(struct queue_head));
+	test->queue->client_sd = test->server_sd;
 	test->ev.events = EPOLLIN | EPOLLET;
-	test->ev.data.ptr = (void *)queue;
+	test->ev.data.ptr = (void *)test->queue;
 	epoll_ctl(test->epoll_fd, EPOLL_CTL_ADD, test->server_sd, &test->ev);
-	list_add_tail(&test->sd_head, &queue->sd_list);
 
 	/* add stdin to epoll */
 	queue = (struct queue_head *)malloc(sizeof(struct queue_head));
@@ -241,6 +240,7 @@ int tcp_handle_client_data(struct server_data *test)
 							list_delete_self(&list->queue_list);
 							free(list);
 						}
+						free(test->queue);
 						flag = 1;
 						kill_thread(queue_id, SIGUSR1);
 						pthread_mutex_unlock(&test->queue_mutex);
