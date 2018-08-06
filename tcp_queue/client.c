@@ -70,7 +70,7 @@ int tcp_client_init(struct client_data *test)
 	test->ev.events = EPOLLIN | EPOLLET;
 	test->ev.data.fd = test->client_sd;
 	epoll_ctl(test->epoll_fd, EPOLL_CTL_ADD, test->client_sd, &test->ev);
-	
+
 	return 0;
 }
 
@@ -91,7 +91,7 @@ int tcp_handle_server_data(struct client_data *test)
 		printf("sendto server %s error!\n", inet_ntoa(test->server_addr.sin_addr));
 		return ret;
 	}
-		
+
 	while (1) {
 		/* wait for stdin and client fd */
 		test->npolledevents = epoll_wait(test->epoll_fd, test->polledevents, EPOLL_SIZE_MAX, -1);
@@ -103,10 +103,10 @@ int tcp_handle_server_data(struct client_data *test)
 			if (test->polledevents[i].events & EPOLLIN) {
 				/* caculate how many */
 				ioctl(test->polledevents[i].data.fd, FIONREAD, &nread);
-	
+
 				/* prepare buf to read */
 				memset(test->from_data, 0, BUF_LEN);
-	
+
 				/* read */
 				test->count = read(test->polledevents[i].data.fd, test->from_data, nread);
 				if (test->count == -1 && test->polledevents[i].data.fd != 0) {

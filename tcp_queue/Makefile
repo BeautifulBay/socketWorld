@@ -1,5 +1,5 @@
 
-all: list.o queue.o server.o client.o 
+all: list.o queue.o server.o client.o
 	@echo "Done!"
 
 %.o:%.c

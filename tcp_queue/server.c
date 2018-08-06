@@ -210,7 +210,7 @@ int tcp_handle_client_data(struct server_data *test)
 
 				if (test->polledevents[i].data.fd == 0)
 					fd = 0;
-				else 
+				else
 					fd = ((struct queue_head*)(test->polledevents[i].data.ptr))->client_sd;
 
 				/* get count from fd */
