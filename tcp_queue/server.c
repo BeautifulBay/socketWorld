@@ -43,6 +43,8 @@ struct server_data {
 int tcp_server_init(struct server_data *test)
 {
 	int ret;
+	struct queue_head *queue;
+
 	/* create socket fd */
 	test->server_sd = socket(AF_INET, SOCK_STREAM, 0);
 	if (test->server_sd == -1) {
@@ -88,14 +90,20 @@ int tcp_server_init(struct server_data *test)
 	}
 
 	/* add listen sd to epoll */
+	queue = (struct queue_head *)malloc(sizeof(struct queue_head));
+	queue->client_sd = test->server_sd;
 	test->ev.events = EPOLLIN | EPOLLET;
-	test->ev.data.fd = test->server_sd;
+	test->ev.data.ptr = (void *)queue;
 	epoll_ctl(test->epoll_fd, EPOLL_CTL_ADD, test->server_sd, &test->ev);
+	list_add_tail(&test->sd_head, &queue->sd_list);
 
 	/* add stdin to epoll */
+	queue = (struct queue_head *)malloc(sizeof(struct queue_head));
+	queue->client_sd = 0;
 	test->ev.events = EPOLLIN | EPOLLET;
-	test->ev.data.fd = 0;
+	test->ev.data.ptr = (void *)queue;
 	epoll_ctl(test->epoll_fd, EPOLL_CTL_ADD, 0, &test->ev);
+	list_add_tail(&test->sd_head, &queue->sd_list);
 }
 
 void signal_catchfunc(int number)
@@ -187,7 +195,8 @@ int tcp_handle_client_data(struct server_data *test)
 		}
 
 		for (i = 0; i < test->npolledevents; i++) {
-			if (test->polledevents[i].data.fd == test->server_sd) {
+			int fd = ((struct queue_head*)test->polledevents[i].data.ptr)->client_sd;
+			if (fd == test->server_sd) {
 				/* client sd connect */
 				struct queue_head *queue = (struct queue_head *)malloc(sizeof(struct queue_head));
 				queue->client_sd = accept(test->server_sd, (struct sockaddr*)&queue->client_addr, &test->len);
@@ -195,7 +204,6 @@ int tcp_handle_client_data(struct server_data *test)
 					printf("accept error!\n");
 				} else {
 					test->ev.events = EPOLLIN | EPOLLET;
-					test->ev.data.fd = queue->client_sd;
 					test->ev.data.ptr = (void *)queue;
 					epoll_ctl(test->epoll_fd, EPOLL_CTL_ADD, queue->client_sd, &test->ev);
 					queue_init(queue, (void *)test);
@@ -204,21 +212,15 @@ int tcp_handle_client_data(struct server_data *test)
 					printf("add a client fd = %d\n", queue->client_sd);
 				}
 			} else if (test->polledevents[i].events & EPOLLIN) {
-				int fd;
-				if (test->polledevents[i].data.fd < 0)
+				if (fd < 0)
 					continue;
-
-				if (test->polledevents[i].data.fd == 0)
-					fd = 0;
-				else
-					fd = ((struct queue_head*)(test->polledevents[i].data.ptr))->client_sd;
 
 				/* get count from fd */
 				ioctl(fd, FIONREAD, &nread);
 
-				if (test->polledevents[i].data.fd == 0) {
+				if (fd == 0) {
 					/* get data from stdin */
-					read(test->polledevents[i].data.fd, test->from_data, nread);
+					read(fd, test->from_data, nread);
 					if (strcmp(test->from_data, "q\n") == 0) {
 						pthread_mutex_lock(&test->queue_mutex);
 						struct list_head *temp = &test->sd_head;
