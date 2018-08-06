@@ -233,7 +233,6 @@ int tcp_handle_client_data(struct server_data *test)
 									printf("write to a client fd %d error!\n", list->client_sd);
 								}
 								printf("send to client %d: %s\n", list->client_sd, test->to_data);
-								close(list->client_sd);
 							}
 							epoll_ctl(test->epoll_fd, EPOLL_CTL_DEL, list->client_sd, &test->ev);
 							list_delete_self(&list->sd_list);

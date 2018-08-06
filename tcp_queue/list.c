@@ -15,13 +15,6 @@ void list_add_tail(struct list_head *head, struct list_head *list)
 	head->prev = list;
 }
 
-void list_delete(struct list_head *head, struct list_head *list){
-	list->prev->next = head;
-	head->prev = list->prev;
-	list->prev = NULL;
-	list->next = NULL;
-}
-
 void list_delete_self(struct list_head *self)
 {
 	if (self->prev == NULL || self->next == NULL)

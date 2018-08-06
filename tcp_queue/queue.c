@@ -24,12 +24,7 @@ struct queue_head* dequeue(struct list_head *head)
 {
 	struct queue_head *list;
 	list = container_of(head->next, struct queue_head, queue_list);
-	list_delete(head, head->next);
+	list_delete_self(head->next);
 	return list;
-}
-
-bool queue_is_empty(struct queue_head *head)
-{
-	return (head->queue_list.next == head->queue_list.prev);
 }
 

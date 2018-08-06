@@ -16,6 +16,5 @@ struct queue_head {
 void queue_init(struct queue_head *queue, void *data);
 void enqueue(struct list_head *head, struct queue_head *list);
 struct queue_head* dequeue(struct list_head *head);
-bool queue_is_empty(struct queue_head *head);
 
 #endif
